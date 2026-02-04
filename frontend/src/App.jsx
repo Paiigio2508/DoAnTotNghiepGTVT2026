@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { Client } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
+import SockJS from 'sockjs-client/dist/sockjs';
 import './App.css';
 
 function App() {
@@ -9,6 +9,7 @@ function App() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [connected, setConnected] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(true);
   const clientRef = useRef(null);
 
   const canConnect = useMemo(() => username.trim().length > 0, [username]);
@@ -77,75 +78,85 @@ function App() {
         <p>Chat 1-1 between two accounts using WebSocket + STOMP.</p>
       </header>
 
-      <section className="card">
-        <div className="row">
-          <label>
-            Your name
-            <input
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-              placeholder="Enter your name"
-            />
-          </label>
-          <button type="button" onClick={connect} disabled={!canConnect || connected}>
-            Connect
-          </button>
-          <button type="button" onClick={disconnect} disabled={!connected}>
-            Disconnect
-          </button>
-        </div>
-        <p className={connected ? 'status status--online' : 'status status--offline'}>
-          {connected ? `Connected as ${username}` : 'Disconnected'}
-        </p>
-      </section>
+      <button
+        type="button"
+        className="chat-toggle"
+        onClick={() => setIsChatOpen((open) => !open)}
+      >
+        {isChatOpen ? 'Hide chat' : 'Show chat'}
+      </button>
 
-      <section className="card">
-        <div className="row">
-          <label>
-            Recipient
-            <input
-              value={recipient}
-              onChange={(event) => setRecipient(event.target.value)}
-              placeholder="Recipient username"
-            />
-          </label>
-          <label className="row__message">
-            Message
-            <input
-              value={message}
-              onChange={(event) => setMessage(event.target.value)}
-              placeholder="Type a message"
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  sendMessage();
-                }
-              }}
-            />
-          </label>
-          <button type="button" onClick={sendMessage} disabled={!canSend}>
-            Send
-          </button>
-        </div>
-      </section>
+      <div className={`chat-panel ${isChatOpen ? 'chat-panel--open' : 'chat-panel--closed'}`}>
+        <section className="card">
+          <div className="row">
+            <label>
+              Your name
+              <input
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
+                placeholder="Enter your name"
+              />
+            </label>
+            <button type="button" onClick={connect} disabled={!canConnect || connected}>
+              Connect
+            </button>
+            <button type="button" onClick={disconnect} disabled={!connected}>
+              Disconnect
+            </button>
+          </div>
+          <p className={connected ? 'status status--online' : 'status status--offline'}>
+            {connected ? `Connected as ${username}` : 'Disconnected'}
+          </p>
+        </section>
 
-      <section className="card card--list">
-        <h2>Conversation</h2>
-        {messages.length === 0 ? (
-          <p className="empty">No messages yet.</p>
-        ) : (
-          <ul className="messages">
-            {messages.map((entry, index) => (
-              <li key={`${entry.timestamp}-${index}`} className="message">
-                <div className="message__meta">
-                  <strong>{entry.sender}</strong> → <span>{entry.recipient}</span>
-                  <span className="message__time">{entry.timestamp}</span>
-                </div>
-                <p>{entry.content}</p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+        <section className="card">
+          <div className="row">
+            <label>
+              Recipient
+              <input
+                value={recipient}
+                onChange={(event) => setRecipient(event.target.value)}
+                placeholder="Recipient username"
+              />
+            </label>
+            <label className="row__message">
+              Message
+              <input
+                value={message}
+                onChange={(event) => setMessage(event.target.value)}
+                placeholder="Type a message"
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    sendMessage();
+                  }
+                }}
+              />
+            </label>
+            <button type="button" onClick={sendMessage} disabled={!canSend}>
+              Send
+            </button>
+          </div>
+        </section>
+
+        <section className="card card--list">
+          <h2>Conversation</h2>
+          {messages.length === 0 ? (
+            <p className="empty">No messages yet.</p>
+          ) : (
+            <ul className="messages">
+              {messages.map((entry, index) => (
+                <li key={`${entry.timestamp}-${index}`} className="message">
+                  <div className="message__meta">
+                    <strong>{entry.sender}</strong> → <span>{entry.recipient}</span>
+                    <span className="message__time">{entry.timestamp}</span>
+                  </div>
+                  <p>{entry.content}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
     </div>
   );
 }
