@@ -19,9 +19,7 @@ function App() {
   );
 
   const connect = () => {
-    if (!canConnect || connected) {
-      return;
-    }
+    if (!canConnect || connected) return;
 
     const client = new Client({
       webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
@@ -33,12 +31,8 @@ function App() {
         });
         setConnected(true);
       },
-      onDisconnect: () => {
-        setConnected(false);
-      },
-      onStompError: () => {
-        setConnected(false);
-      },
+      onDisconnect: () => setConnected(false),
+      onStompError: () => setConnected(false),
     });
 
     client.activate();
@@ -53,9 +47,7 @@ function App() {
   };
 
   const sendMessage = () => {
-    if (!canSend || !clientRef.current) {
-      return;
-    }
+    if (!canSend || !clientRef.current) return;
 
     const payload = {
       sender: username.trim(),
@@ -104,14 +96,14 @@ function App() {
                 Your name
                 <input
                   value={username}
-                  onChange={(event) => setUsername(event.target.value)}
+                  onChange={(e) => setUsername(e.target.value)}
                   placeholder="Enter your name"
                 />
               </label>
-              <button type="button" onClick={connect} disabled={!canConnect || connected}>
+              <button onClick={connect} disabled={!canConnect || connected}>
                 Connect
               </button>
-              <button type="button" onClick={disconnect} disabled={!connected}>
+              <button onClick={disconnect} disabled={!connected}>
                 Disconnect
               </button>
             </div>
@@ -126,7 +118,7 @@ function App() {
                 Recipient
                 <input
                   value={recipient}
-                  onChange={(event) => setRecipient(event.target.value)}
+                  onChange={(e) => setRecipient(e.target.value)}
                   placeholder="Recipient username"
                 />
               </label>
@@ -134,16 +126,12 @@ function App() {
                 Message
                 <input
                   value={message}
-                  onChange={(event) => setMessage(event.target.value)}
+                  onChange={(e) => setMessage(e.target.value)}
                   placeholder="Type a message"
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                      sendMessage();
-                    }
-                  }}
+                  onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
                 />
               </label>
-              <button type="button" onClick={sendMessage} disabled={!canSend}>
+              <button onClick={sendMessage} disabled={!canSend}>
                 Send
               </button>
             </div>
@@ -155,13 +143,13 @@ function App() {
               <p className="empty">No messages yet.</p>
             ) : (
               <ul className="messages">
-                {messages.map((entry, index) => (
-                  <li key={`${entry.timestamp}-${index}`} className="message">
+                {messages.map((m, i) => (
+                  <li key={`${m.timestamp}-${i}`} className="message">
                     <div className="message__meta">
-                      <strong>{entry.sender}</strong> → <span>{entry.recipient}</span>
-                      <span className="message__time">{entry.timestamp}</span>
+                      <strong>{m.sender}</strong> → <span>{m.recipient}</span>
+                      <span className="message__time">{m.timestamp}</span>
                     </div>
-                    <p>{entry.content}</p>
+                    <p>{m.content}</p>
                   </li>
                 ))}
               </ul>
