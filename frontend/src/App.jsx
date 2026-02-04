@@ -19,9 +19,7 @@ function App() {
   );
 
   const connect = () => {
-    if (!canConnect || connected) {
-      return;
-    }
+    if (!canConnect || connected) return;
 
     const client = new Client({
       webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
@@ -33,12 +31,8 @@ function App() {
         });
         setConnected(true);
       },
-      onDisconnect: () => {
-        setConnected(false);
-      },
-      onStompError: () => {
-        setConnected(false);
-      },
+      onDisconnect: () => setConnected(false),
+      onStompError: () => setConnected(false),
     });
 
     client.activate();
@@ -53,9 +47,7 @@ function App() {
   };
 
   const sendMessage = () => {
-    if (!canSend || !clientRef.current) {
-      return;
-    }
+    if (!canSend || !clientRef.current) return;
 
     const payload = {
       sender: username.trim(),
@@ -78,84 +70,92 @@ function App() {
         <p>Chat 1-1 between two accounts using WebSocket + STOMP.</p>
       </header>
 
-      <button
-        type="button"
-        className="chat-toggle"
-        onClick={() => setIsChatOpen((open) => !open)}
-      >
-        {isChatOpen ? 'Hide chat' : 'Show chat'}
-      </button>
-
-      <div className={`chat-panel ${isChatOpen ? 'chat-panel--open' : 'chat-panel--closed'}`}>
-        <section className="card">
-          <div className="row">
-            <label>
-              Your name
-              <input
-                value={username}
-                onChange={(event) => setUsername(event.target.value)}
-                placeholder="Enter your name"
-              />
-            </label>
-            <button type="button" onClick={connect} disabled={!canConnect || connected}>
-              Connect
-            </button>
-            <button type="button" onClick={disconnect} disabled={!connected}>
-              Disconnect
-            </button>
+      <div className="chat-widget">
+        <div className="chat-widget__header">
+          <div>
+            <h2>Chat</h2>
+            <p>{connected ? `Connected as ${username || '...'}` : 'Disconnected'}</p>
           </div>
-          <p className={connected ? 'status status--online' : 'status status--offline'}>
-            {connected ? `Connected as ${username}` : 'Disconnected'}
-          </p>
-        </section>
+          <button
+            type="button"
+            className="chat-widget__toggle"
+            onClick={() => setIsChatOpen((open) => !open)}
+          >
+            {isChatOpen ? '−' : '+'}
+          </button>
+        </div>
 
-        <section className="card">
-          <div className="row">
-            <label>
-              Recipient
-              <input
-                value={recipient}
-                onChange={(event) => setRecipient(event.target.value)}
-                placeholder="Recipient username"
-              />
-            </label>
-            <label className="row__message">
-              Message
-              <input
-                value={message}
-                onChange={(event) => setMessage(event.target.value)}
-                placeholder="Type a message"
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    sendMessage();
-                  }
-                }}
-              />
-            </label>
-            <button type="button" onClick={sendMessage} disabled={!canSend}>
-              Send
-            </button>
-          </div>
-        </section>
+        <div
+          className={`chat-widget__body ${
+            isChatOpen ? 'chat-widget__body--open' : 'chat-widget__body--closed'
+          }`}
+        >
+          <section className="card">
+            <div className="row">
+              <label>
+                Your name
+                <input
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Enter your name"
+                />
+              </label>
+              <button onClick={connect} disabled={!canConnect || connected}>
+                Connect
+              </button>
+              <button onClick={disconnect} disabled={!connected}>
+                Disconnect
+              </button>
+            </div>
+            <p className={connected ? 'status status--online' : 'status status--offline'}>
+              {connected ? `Connected as ${username}` : 'Disconnected'}
+            </p>
+          </section>
 
-        <section className="card card--list">
-          <h2>Conversation</h2>
-          {messages.length === 0 ? (
-            <p className="empty">No messages yet.</p>
-          ) : (
-            <ul className="messages">
-              {messages.map((entry, index) => (
-                <li key={`${entry.timestamp}-${index}`} className="message">
-                  <div className="message__meta">
-                    <strong>{entry.sender}</strong> → <span>{entry.recipient}</span>
-                    <span className="message__time">{entry.timestamp}</span>
-                  </div>
-                  <p>{entry.content}</p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+          <section className="card">
+            <div className="row">
+              <label>
+                Recipient
+                <input
+                  value={recipient}
+                  onChange={(e) => setRecipient(e.target.value)}
+                  placeholder="Recipient username"
+                />
+              </label>
+              <label className="row__message">
+                Message
+                <input
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Type a message"
+                  onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+                />
+              </label>
+              <button onClick={sendMessage} disabled={!canSend}>
+                Send
+              </button>
+            </div>
+          </section>
+
+          <section className="card card--list">
+            <h3>Conversation</h3>
+            {messages.length === 0 ? (
+              <p className="empty">No messages yet.</p>
+            ) : (
+              <ul className="messages">
+                {messages.map((m, i) => (
+                  <li key={`${m.timestamp}-${i}`} className="message">
+                    <div className="message__meta">
+                      <strong>{m.sender}</strong> → <span>{m.recipient}</span>
+                      <span className="message__time">{m.timestamp}</span>
+                    </div>
+                    <p>{m.content}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
       </div>
     </div>
   );
