@@ -33,7 +33,6 @@
   margin-bottom: 0;
 }
 
-/* ===== CHAT WIDGET ===== */
 .chat-widget {
   position: fixed;
   right: 1.5rem;
@@ -72,7 +71,7 @@
   padding: 0.3rem 0.7rem;
   border-radius: 999px;
   background: #7c3aed;
-  color: #fff;
+
 }
 
 .chat-widget__body {
@@ -122,8 +121,6 @@
 .chat-widget button:disabled {
   background: #334155;
 }
-
-/* ===== FORM ===== */
 .row {
   display: flex;
   gap: 1rem;

@@ -98,6 +98,7 @@ function App() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Enter your name"
+                  disabled={connected}
                 />
               </label>
               <button onClick={connect} disabled={!canConnect || connected}>
