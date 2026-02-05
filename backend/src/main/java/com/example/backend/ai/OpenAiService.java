@@ -33,7 +33,14 @@ public class OpenAiService {
   }
 
   public AiChatResponse createReply(AiChatRequest request) {
-    if (apiKey == null || apiKey.isBlank()) {
+    String resolvedApiKey = apiKey;
+    if (resolvedApiKey == null || resolvedApiKey.isBlank()) {
+      resolvedApiKey = System.getenv("OPENAI_API_KEY");
+    }
+    if (resolvedApiKey == null || resolvedApiKey.isBlank()) {
+      resolvedApiKey = System.getProperty("OPENAI_API_KEY");
+    }
+    if (resolvedApiKey == null || resolvedApiKey.isBlank()) {
       return new AiChatResponse("AMI chưa được cấu hình API key. Vui lòng liên hệ quản trị.");
     }
 
@@ -43,7 +50,7 @@ public class OpenAiService {
           HttpRequest.newBuilder()
               .uri(OPENAI_URI)
               .timeout(Duration.ofSeconds(30))
-              .header("Authorization", "Bearer " + apiKey)
+              .header("Authorization", "Bearer " + resolvedApiKey)
               .header("Content-Type", "application/json")
               .POST(HttpRequest.BodyPublishers.ofString(payload))
               .build();
