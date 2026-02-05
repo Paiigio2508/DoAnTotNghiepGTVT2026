@@ -10,11 +10,12 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [aiInput, setAiInput] = useState('');
   const [aiIsTyping, setAiIsTyping] = useState(false);
+  const [aiError, setAiError] = useState('');
   const [aiMessages, setAiMessages] = useState([
     {
       sender: 'assistant',
       content:
-        'Xin chào! Tôi là trợ lý AI. Bạn có thể hỏi tôi về sản phẩm, hướng dẫn sử dụng, hoặc gợi ý nội dung.',
+        'Xin chào! Tôi là AMI của PTIT. Tôi có thể hỗ trợ bạn tra cứu thông tin học vụ, dịch vụ sinh viên, hoặc gợi ý nội dung.',
       timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -34,23 +35,6 @@ function App() {
 
   const buildTimestamp = () =>
     new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-
-  const buildAiReply = (prompt) => {
-    const normalized = prompt.toLowerCase();
-    if (normalized.includes('xin chào') || normalized.includes('chào')) {
-      return 'Chào bạn! Tôi có thể giúp bạn lên kịch bản trò chuyện, gợi ý nội dung, hoặc trả lời câu hỏi nhanh.';
-    }
-    if (normalized.includes('giá') || normalized.includes('chi phí')) {
-      return 'Bạn có thể cho tôi biết sản phẩm/dịch vụ cụ thể để tôi gợi ý chi phí phù hợp?';
-    }
-    if (normalized.includes('hướng dẫn') || normalized.includes('cách dùng')) {
-      return 'Bạn muốn hướng dẫn phần nào? Hãy mô tả ngắn, tôi sẽ gửi từng bước cụ thể.';
-    }
-    if (normalized.includes('tính năng') || normalized.includes('feature')) {
-      return 'Tôi có thể tóm tắt các tính năng chính, lợi ích và các ví dụ sử dụng. Bạn cần theo dạng bảng hay bullet?';
-    }
-    return 'Tôi đã ghi nhận. Bạn muốn tôi làm rõ thêm phần nào hoặc cần gợi ý chi tiết hơn?';
-  };
 
   const connect = () => {
     if (!canConnect || connected) return;
@@ -97,7 +81,7 @@ function App() {
     setMessage('');
   };
 
-  const sendAiMessage = () => {
+  const sendAiMessage = async () => {
     if (!canSendAi) return;
     const trimmed = aiInput.trim();
     const userMessage = {
@@ -105,33 +89,56 @@ function App() {
       content: trimmed,
       timestamp: buildTimestamp(),
     };
+    const history = aiMessages.map((item) => ({
+      role: item.sender === 'assistant' ? 'assistant' : 'user',
+      content: item.content,
+    }));
+
     setAiMessages((prev) => [...prev, userMessage]);
     setAiInput('');
     setAiIsTyping(true);
+    setAiError('');
 
-    setTimeout(() => {
+    try {
+      const response = await fetch('http://localhost:8080/api/ai-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: trimmed, history }),
+      });
+      if (!response.ok) {
+        throw new Error('Không thể kết nối tới AI. Vui lòng thử lại.');
+      }
+      const data = await response.json();
       const reply = {
         sender: 'assistant',
-        content: buildAiReply(trimmed),
+        content: data.reply || 'AMI chưa thể trả lời lúc này.',
         timestamp: buildTimestamp(),
       };
       setAiMessages((prev) => [...prev, reply]);
+    } catch (error) {
+      setAiError(error.message || 'Đã có lỗi xảy ra.');
+    } finally {
       setAiIsTyping(false);
-    }, 700);
+    }
   };
 
   return (
     <div className="app">
       <header className="app__header">
-        <h1>Realtime Chat</h1>
-        <p>Chat 1-1 between two accounts using WebSocket + STOMP.</p>
+        <div className="app__brand">
+          <span className="app__logo">PTIT</span>
+          <div>
+            <h1>PTIT AMI Chat</h1>
+            <p>Trợ lý thông minh hỗ trợ sinh viên và cán bộ PTIT 24/7.</p>
+          </div>
+        </div>
       </header>
 
       <div className="chat-widget">
         <div className="chat-widget__header">
           <div>
-            <h2>Chat</h2>
-            <p>{connected ? `Connected as ${username || '...'}` : 'Disconnected'}</p>
+            <h2>AMI Chat</h2>
+            <p>{connected ? `Đang kết nối: ${username || '...'}` : 'Chưa kết nối'}</p>
           </div>
           <button
             type="button"
@@ -150,47 +157,47 @@ function App() {
           <section className="card">
             <div className="row">
               <label>
-                Your name
+                Tên của bạn
                 <input
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter your name"
+                  placeholder="Nhập tên"
                   disabled={connected}
                 />
               </label>
               <button onClick={connect} disabled={!canConnect || connected}>
-                Connect
+                Kết nối
               </button>
               <button onClick={disconnect} disabled={!connected}>
-                Disconnect
+                Ngắt kết nối
               </button>
             </div>
             <p className={connected ? 'status status--online' : 'status status--offline'}>
-              {connected ? `Connected as ${username}` : 'Disconnected'}
+              {connected ? `Đã kết nối: ${username}` : 'Chưa kết nối'}
             </p>
           </section>
 
           <section className="card">
             <div className="row">
               <label>
-                Recipient
+                Người nhận
                 <input
                   value={recipient}
                   onChange={(e) => setRecipient(e.target.value)}
-                  placeholder="Recipient username"
+                  placeholder="Tài khoản người nhận"
                 />
               </label>
               <label className="row__message">
-                Message
+                Tin nhắn
                 <input
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Type a message"
+                  placeholder="Nhập nội dung"
                   onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
                 />
               </label>
               <button onClick={sendMessage} disabled={!canSend}>
-                Send
+                Gửi
               </button>
             </div>
           </section>
@@ -198,12 +205,26 @@ function App() {
           <section className="card card--ai">
             <div className="ai-header">
               <div>
-                <h3>Hỗ trợ AI</h3>
-                <p>Trợ lý gợi ý nhanh nội dung và phản hồi.</p>
+                <h3>Trợ lý AMI PTIT</h3>
+                <p>Gợi ý nhanh về học vụ, dịch vụ sinh viên, và thông báo mới.</p>
               </div>
               <span className={`ai-status ${aiIsTyping ? 'ai-status--typing' : ''}`}>
                 {aiIsTyping ? 'Đang soạn trả lời...' : 'Sẵn sàng'}
               </span>
+            </div>
+            <div className="ai-suggestions">
+              {['Học phí học kỳ này?', 'Lịch thi cuối kỳ', 'Hướng dẫn đăng ký môn'].map(
+                (suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    className="ai-suggestion"
+                    onClick={() => setAiInput(suggestion)}
+                  >
+                    {suggestion}
+                  </button>
+                )
+              )}
             </div>
             <ul className="ai-messages">
               {aiMessages.map((aiMessage, index) => (
@@ -221,13 +242,14 @@ function App() {
                 </li>
               ) : null}
             </ul>
+            {aiError ? <p className="ai-error">{aiError}</p> : null}
             <div className="row ai-input">
               <label>
-                Nhắn cho AI
+                Nhắn cho AMI
                 <input
                   value={aiInput}
                   onChange={(e) => setAiInput(e.target.value)}
-                  placeholder="Bạn cần trợ giúp gì?"
+                  placeholder="Hỏi AMI về PTIT..."
                   onKeyDown={(e) => e.key === 'Enter' && sendAiMessage()}
                 />
               </label>
@@ -238,9 +260,9 @@ function App() {
           </section>
 
           <section className="card card--list">
-            <h3>Conversation</h3>
+            <h3>Hộp thoại 1-1</h3>
             {messages.length === 0 ? (
-              <p className="empty">No messages yet.</p>
+              <p className="empty">Chưa có tin nhắn.</p>
             ) : (
               <ul className="messages">
                 {messages.map((m, i) => (
